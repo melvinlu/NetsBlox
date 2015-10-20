@@ -57,6 +57,7 @@ MobileManager.prototype.emailProjectApk = function(name, email, baseURL, xml) {
         MobileManager.cordova.bind(null, ['create', name], {cwd: myTmpDir}),
         MobileManager.cordova.bind(null, ['platform', 'add', 'android'], {cwd: myProjectDir}),
         MobileManager.customizeCordovaApp.bind(null, name, baseURL, xml, myProjectDir),
+        MobileManager.cordova.bind(null, ['plugin', 'add', 'cordova-plugin-geolocation'], {cwd: myProjectDir}),
         MobileManager.cordova.bind(null, ['compile', 'android'], {cwd: myProjectDir})
         ], 
         function(err) {
