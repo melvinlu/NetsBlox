@@ -9,6 +9,7 @@ var _ = require('lodash'),
     },
     Messages = require('./MessageTypes');
 
+// GameTypes and associated stuff
 module.exports = [
     {
         name: 'TicTacToe',
@@ -32,7 +33,15 @@ module.exports = [
     {
         name: 'Fox and Geese',
         paradigm: 'uniquerole',
-        messageTypes: [Messages.MoveGoose, Messages.MoveFox]
+        messageTypes: [
+            Messages.join,
+            Messages.leave,
+            Messages.reset,
+            Messages.register,
+
+            Messages.MoveGoose,
+            Messages.MoveFox
+        ]
     },
     {
         name: 'None',

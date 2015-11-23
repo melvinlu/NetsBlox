@@ -9,6 +9,13 @@ var R = require('ramda'),
 module.exports = R.mapObjIndexed(convertMsgType,
     // Message Type List
     {
+        // Simple events
+        join: [],
+        leave: [],
+        reset: [],
+        register: ['role'],
+
+        // Message Types
         TicTacToe: ['row', 'column'],
         SimpleMessage: ['sender', 'body'],
         MoveGoose: ['goose', 'row', 'column'],

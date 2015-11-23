@@ -109,13 +109,13 @@ UniqueRoleParadigm.prototype.onConnect = function(socket) {
 UniqueRoleParadigm.prototype.onMessage = function(socket, message) {
     var uuid = socket.uuid,
         data = message.split(' '),
-        type = data.shift(),
+        type = data[1],
         role,
         oldRole = this.uuid2Role[uuid],
         oldGroupMembers = null;
 
     if (type === 'register') {
-        role = data.join(' ');
+        role = JSON.parse(data.slice(2).join(' ')).role;
         if (oldRole !== role) {
             trace('setting', uuid, 'to', role);
             this.uuid2Role[uuid] = role;
