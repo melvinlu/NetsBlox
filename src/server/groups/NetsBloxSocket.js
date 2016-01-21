@@ -165,7 +165,6 @@ NetsBloxSocket.prototype.OPEN = 1;
 NetsBloxSocket.prototype.CLOSING = 2;
 NetsBloxSocket.prototype.CLOSED = 3;
 
-// TODO: Every message should contain the sender and receiver
 NetsBloxSocket.MessageHandlers = {
     'message': function() {
         var rawMsg = Array.prototype.slice.call(arguments);
@@ -181,6 +180,16 @@ NetsBloxSocket.MessageHandlers = {
         rawMsg.unshift('message');
         msg = rawMsg.join(' ');
         this._logger.trace(`sending message to table: "${msg}"`);
+    },
+
+    'table-edit': function() {
+        var type = [].shift.call(arguments),
+            message = [].join.call(arguments, ' ');
+
+        this._logger.trace(`editing the table: ${message}`);
+        if (this.hasTable()) {
+            //this._table.core.onMessage(type, message);
+        }
     },
 
     'project-response': function(id) {

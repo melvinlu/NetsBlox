@@ -2,7 +2,8 @@
 'use strict';
 
 var R = require('ramda'),
-    utils = require('../ServerUtils');
+    utils = require('../ServerUtils'),
+    TableCore = require('../../snap-engine/TableCore');
 
 // TODO: Create the table client
 class ActiveTable {
@@ -21,6 +22,9 @@ class ActiveTable {
 
         // RPC contexts
         this.rpcs = {};
+
+        // Table logic
+        //this.core = new TableCore(this._logger);
     }
 
     add (socket, seat) {

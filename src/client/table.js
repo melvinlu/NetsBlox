@@ -54,14 +54,20 @@ IDE_Morph.prototype._getCurrentTabs = function () {
 // Creating the 'projects' view for the table
 IDE_Morph.prototype._createSpriteEditor = IDE_Morph.prototype.createSpriteEditor;
 IDE_Morph.prototype.createSpriteEditor = function() {
-    if (this.currentTab === 'projects') {
-        if (this.spriteEditor) {
-            this.spriteEditor.destroy();
-        }
+    if (this.currentSprite === this.table) {
+        if (this.currentTab === 'projects') {
+            if (this.spriteEditor) {
+                this.spriteEditor.destroy();
+            }
 
-        this.spriteEditor = new ProjectsMorph(this.table, this.sliderColor);
-        this.spriteEditor.color = this.groupColor;
-        this.add(this.spriteEditor);
+            this.spriteEditor = new ProjectsMorph(this.table, this.sliderColor);
+            this.spriteEditor.color = this.groupColor;
+            this.add(this.spriteEditor);
+        } else {  // scripts
+            this.spriteEditor = new TableScriptsMorph(this);
+            this.spriteEditor.color = this.groupColor;
+            this.add(this.spriteEditor);
+        }
     } else {
         this._createSpriteEditor();
     }
