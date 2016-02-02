@@ -1840,12 +1840,18 @@ SpriteMorph.prototype.blockTemplates = function (category) {
         blocks.push('-');
         blocks.push(block('bounceOffEdge'));
         blocks.push('-');
+        blocks.push(block('setMass'));  // FIXME: Refactor
+        blocks.push(block('verticalForce'));  // FIXME: Refactor
+        blocks.push(block('horizontalForce'));  // FIXME: Refactor
+        blocks.push('-');
         blocks.push(watcherToggle('xPosition'));
         blocks.push(block('xPosition'));
         blocks.push(watcherToggle('yPosition'));
         blocks.push(block('yPosition'));
         blocks.push(watcherToggle('direction'));
         blocks.push(block('direction'));
+        blocks.push(watcherToggle('mass'));
+        blocks.push(block('mass'));
 
     } else if (cat === 'looks') {
 

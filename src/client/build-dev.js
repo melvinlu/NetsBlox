@@ -32924,12 +32924,18 @@ SpriteMorph.prototype.blockTemplates = function (category) {
         blocks.push('-');
         blocks.push(block('bounceOffEdge'));
         blocks.push('-');
+        blocks.push(block('setMass'));  // FIXME: Refactor
+        blocks.push(block('verticalForce'));  // FIXME: Refactor
+        blocks.push(block('horizontalForce'));  // FIXME: Refactor
+        blocks.push('-');
         blocks.push(watcherToggle('xPosition'));
         blocks.push(block('xPosition'));
         blocks.push(watcherToggle('yPosition'));
         blocks.push(block('yPosition'));
         blocks.push(watcherToggle('direction'));
         blocks.push(block('direction'));
+        blocks.push(watcherToggle('mass'));
+        blocks.push(block('mass'));
 
     } else if (cat === 'looks') {
 
@@ -65146,6 +65152,81 @@ var Common = require('../core/Common');
 
     globals.NetsBloxRenderer = Renderer;
 });
+// Sprite support for physics blocks
+(function(global) {
+    var ForceBlocks = {
+        verticalForce: {
+            only: SpriteMorph,
+            type: 'command',
+            category: 'motion',
+            spec: 'apply vertical force of %n',
+            defaults: [10]
+        },
+        horizontalForce: {
+            only: SpriteMorph,
+            type: 'command',
+            category: 'motion',
+            spec: 'apply horizontal force of %n',
+            defaults: [10]
+        },
+        setMass: {
+            only: SpriteMorph,
+            type: 'command',
+            category: 'motion',
+            spec: 'set mass to %n',
+            defaults: [200]
+        },
+        mass: {
+            only: SpriteMorph,
+            type: 'reporter',
+            category: 'motion',
+            spec: 'mass'
+        }
+    };
+
+    var superInit = SpriteMorph.prototype.initBlocks;
+    SpriteMorph.prototype.initBlocks = function() {
+        superInit.call(this);
+        // Add force blocks
+        var names = Object.keys(ForceBlocks);
+        names.forEach(function(name) {
+            SpriteMorph.prototype.blocks[name] = ForceBlocks[name];
+        });
+    };
+
+    SpriteMorph.prototype.verticalForce = function(amt) {
+        var stage = this.parentThatIsA(StageMorph);
+        if (!stage) {
+            console.error('verticalForce has no stage ref!');
+        }
+        stage.physics.verticalForce(this.name, amt);
+    };
+
+    SpriteMorph.prototype.horizontalForce = function(amt) {
+        var stage = this.parentThatIsA(StageMorph);
+        if (!stage) {
+            console.error('horizontalForce has no stage ref!');
+        }
+        stage.physics.horizontalForce(this.name, amt);
+    };
+
+    SpriteMorph.prototype.mass = function(amt) {
+        var stage = this.parentThatIsA(StageMorph);
+        if (!stage) {
+            console.error('getMass has no stage ref!');
+        }
+        return stage.physics.getMass(this.name, amt);
+    };
+
+    SpriteMorph.prototype.setMass = function(amt) {
+        var stage = this.parentThatIsA(StageMorph);
+        if (!stage) {
+            console.error('setMass has no stage ref!');
+        }
+        stage.physics.setMass(this.name, amt);
+    };
+
+})(this);
 // This file defines the physics engine that is used in netsblox.
 // That is, this is the netsblox object that interfaces with the
 // stage and the matterjs physics engine
@@ -65153,6 +65234,7 @@ var Common = require('../core/Common');
     'use strict';
     var Engine = Matter.Engine,
         World = Matter.World,
+        Body = Matter.Body,
         Bodies = Matter.Bodies;
 
     // This is a renderer for matter.js and netsblox
@@ -65168,13 +65250,15 @@ var Common = require('../core/Common');
     };
 
     var PhysicsEngine = function(stage) {
+        this.world = World.create({gravity: {x: 0, y: 0, scale: 0}});
         this.engine = Engine.create({
             render: {
                 controller: Renderer
             }
         });
+        this.engine.world = this.world;
         this.sprites = {};
-        this.boxes = {};
+        this.bodies = {};
 
         // Add the ground
         var width = 40,
@@ -65190,7 +65274,7 @@ var Common = require('../core/Common');
     };
 
     PhysicsEngine.prototype.updateUI = function() {
-        var names = Object.keys(this.boxes),
+        var names = Object.keys(this.bodies),
             sprite,
             oldX,
             newX,
@@ -65201,7 +65285,7 @@ var Common = require('../core/Common');
         for (var i = names.length; i--;) {
             sprite = this.sprites[names[i]];
             if (!sprite.isPickedUp()) {
-                point = this.boxes[names[i]].position;
+                point = this.bodies[names[i]].position;
                 newX = point.x;
                 newY = -point.y;  // engine is inverted; stage is not
 
@@ -65211,7 +65295,6 @@ var Common = require('../core/Common');
 
                 // Set the center and rotation for each sprite
                 if (newX !== oldX || newY !== oldY) {
-                    // Calculate the diff
                     sprite.gotoXY(newX, newY);
                 }
 
@@ -65226,21 +65309,42 @@ var Common = require('../core/Common');
             y = -sprite.yPosition(),  // engine is inverted; stage is not
             width = sprite.width(),
             height = sprite.height(),
-            box = Bodies.rectangle(x, y, width, height);
+            box = Bodies.rectangle(x, y, width, height, {mass: 200});
 
-        if (this.boxes[sprite.name]) {
-            World.remove(this.engine.world, this.boxes[sprite.name]);
+        if (this.bodies[sprite.name]) {
+            World.remove(this.engine.world, this.bodies[sprite.name]);
         }
 
         this.sprites[sprite.name] = sprite;
-        this.boxes[sprite.name] = box;
+        this.bodies[sprite.name] = box;
         World.add(this.engine.world, [box]);
+    };
+
+    PhysicsEngine.prototype.verticalForce = function(name, amt) {
+        // What are the units of amt?
+        // TODO
+        var pt = this.bodies[name].position;
+        Body.applyForce(this.bodies[name], pt, {x: 0, y: -amt});
+    };
+
+    PhysicsEngine.prototype.horizontalForce = function(name, amt) {
+        // What are the units of amt?
+        // TODO
+        var pt = this.bodies[name].position;
+        Body.applyForce(this.bodies[name], pt, {x: +amt, y: 0});
+    };
+
+    PhysicsEngine.prototype.setMass = function(name, amt) {
+        Body.setMass(this.bodies[name], +amt);
+    };
+
+    PhysicsEngine.prototype.getMass = function(name) {
+        return this.bodies[name].mass;
     };
 
     globals.PhysicsEngine = PhysicsEngine;
 
     // Overrides for the PhysicsEngine
-
     var oldStep = StageMorph.prototype.step;
     StageMorph.prototype.step = function() {
         oldStep.call(this);

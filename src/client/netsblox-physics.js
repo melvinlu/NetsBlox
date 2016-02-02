@@ -5,6 +5,7 @@
     'use strict';
     var Engine = Matter.Engine,
         World = Matter.World,
+        Body = Matter.Body,
         Bodies = Matter.Bodies;
 
     // This is a renderer for matter.js and netsblox
@@ -20,13 +21,15 @@
     };
 
     var PhysicsEngine = function(stage) {
+        this.world = World.create({gravity: {x: 0, y: 0, scale: 0}});
         this.engine = Engine.create({
             render: {
                 controller: Renderer
             }
         });
+        this.engine.world = this.world;
         this.sprites = {};
-        this.boxes = {};
+        this.bodies = {};
 
         // Add the ground
         var width = 40,
@@ -42,7 +45,7 @@
     };
 
     PhysicsEngine.prototype.updateUI = function() {
-        var names = Object.keys(this.boxes),
+        var names = Object.keys(this.bodies),
             sprite,
             oldX,
             newX,
@@ -53,7 +56,7 @@
         for (var i = names.length; i--;) {
             sprite = this.sprites[names[i]];
             if (!sprite.isPickedUp()) {
-                point = this.boxes[names[i]].position;
+                point = this.bodies[names[i]].position;
                 newX = point.x;
                 newY = -point.y;  // engine is inverted; stage is not
 
@@ -63,7 +66,6 @@
 
                 // Set the center and rotation for each sprite
                 if (newX !== oldX || newY !== oldY) {
-                    // Calculate the diff
                     sprite.gotoXY(newX, newY);
                 }
 
@@ -78,21 +80,42 @@
             y = -sprite.yPosition(),  // engine is inverted; stage is not
             width = sprite.width(),
             height = sprite.height(),
-            box = Bodies.rectangle(x, y, width, height);
+            box = Bodies.rectangle(x, y, width, height, {mass: 200});
 
-        if (this.boxes[sprite.name]) {
-            World.remove(this.engine.world, this.boxes[sprite.name]);
+        if (this.bodies[sprite.name]) {
+            World.remove(this.engine.world, this.bodies[sprite.name]);
         }
 
         this.sprites[sprite.name] = sprite;
-        this.boxes[sprite.name] = box;
+        this.bodies[sprite.name] = box;
         World.add(this.engine.world, [box]);
+    };
+
+    PhysicsEngine.prototype.verticalForce = function(name, amt) {
+        // What are the units of amt?
+        // TODO
+        var pt = this.bodies[name].position;
+        Body.applyForce(this.bodies[name], pt, {x: 0, y: -amt});
+    };
+
+    PhysicsEngine.prototype.horizontalForce = function(name, amt) {
+        // What are the units of amt?
+        // TODO
+        var pt = this.bodies[name].position;
+        Body.applyForce(this.bodies[name], pt, {x: +amt, y: 0});
+    };
+
+    PhysicsEngine.prototype.setMass = function(name, amt) {
+        Body.setMass(this.bodies[name], +amt);
+    };
+
+    PhysicsEngine.prototype.getMass = function(name) {
+        return this.bodies[name].mass;
     };
 
     globals.PhysicsEngine = PhysicsEngine;
 
     // Overrides for the PhysicsEngine
-
     var oldStep = StageMorph.prototype.step;
     StageMorph.prototype.step = function() {
         oldStep.call(this);
