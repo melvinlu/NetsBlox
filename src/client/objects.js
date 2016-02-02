@@ -4812,6 +4812,10 @@ StageMorph.prototype.init = function (globals) {
     // Add initial message types
     this.addMessageTypeByName('message');
 
+    // Add physics engine
+    // TODO
+    this.physics = new PhysicsEngine(this);
+
     this.variables = new VariableFrame(globals || null, this);
     this.scripts = new ScriptsMorph(this);
     this.customBlocks = [];
