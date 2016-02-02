@@ -65310,7 +65310,7 @@ var Common = require('../core/Common');
 
                 // Set the center and rotation for each sprite
                 if (newX !== oldX || newY !== oldY) {
-                    sprite.gotoXY(newX, newY);
+                    sprite._gotoXY(newX, newY);
                 }
 
                 // Set the rotation for each sprite
@@ -65324,7 +65324,10 @@ var Common = require('../core/Common');
             y = -sprite.yPosition(),  // engine is inverted; stage is not
             width = sprite.width(),
             height = sprite.height(),
-            box = Bodies.rectangle(x, y, width, height, {mass: 200});
+            box = Bodies.rectangle(x, y, width, height, {
+                mass: 200,
+                restitution: 0
+            });
 
         if (this.bodies[sprite.name]) {
             World.remove(this.engine.world, this.bodies[sprite.name]);
@@ -65340,6 +65343,10 @@ var Common = require('../core/Common');
         delete this.bodies[sprite.name];
         delete this.sprites[sprite.name];
     }
+
+    PhysicsEngine.prototype.setPosition = function(name, x, y) {
+        Body.setPosition(this.bodies[name], {x:x, y:y});
+    };
 
     PhysicsEngine.prototype.verticalForce = function(name, amt) {
         // What are the units of amt?
@@ -65374,10 +65381,14 @@ var Common = require('../core/Common');
     globals.PhysicsEngine = PhysicsEngine;
 
     // Overrides for the PhysicsEngine
-    //SpriteMorph.prototype._gotoXY = SpriteMorph.prototype.gotoXY;
-    //SpriteMorph.prototype.gotoXY = function(x, y, justMe) {
-        //this._gotoXY.call(x, y, justMe);
-    //};
+    SpriteMorph.prototype._gotoXY = SpriteMorph.prototype.gotoXY;
+    SpriteMorph.prototype.gotoXY = function(x, y, justMe) {
+        // Update the position of the object in the physics engine
+        var stage = this.parentThatIsA(StageMorph);
+
+        stage.physics.setPosition(this.name, x, y);
+        this._gotoXY.call(this, x, y, justMe);
+    };
 
     IDE_Morph.prototype._removeSprite = IDE_Morph.prototype.removeSprite;
     IDE_Morph.prototype.removeSprite = function(sprite) {
