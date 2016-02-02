@@ -21,13 +21,13 @@
     };
 
     var PhysicsEngine = function(stage) {
-        this.world = World.create({gravity: {x: 0, y: 0, scale: 0}});
+        //this.world = World.create({gravity: {x: 0, y: 0, scale: 0}});
         this.engine = Engine.create({
             render: {
                 controller: Renderer
             }
         });
-        this.engine.world = this.world;
+        //this.engine.world = this.world;
         this.sprites = {};
         this.bodies = {};
 
@@ -60,9 +60,8 @@
                 newX = point.x;
                 newY = -point.y;  // engine is inverted; stage is not
 
-                point = sprite.center();
-                oldX = point.x;
-                oldY = point.y;
+                oldX = sprite.xPosition();
+                oldY = sprite.yPosition();
 
                 // Set the center and rotation for each sprite
                 if (newX !== oldX || newY !== oldY) {
@@ -91,6 +90,12 @@
         World.add(this.engine.world, [box]);
     };
 
+    PhysicsEngine.prototype.removeSprite = function(sprite) {
+        World.remove(this.engine.world, this.bodies[sprite.name]);
+        delete this.bodies[sprite.name];
+        delete this.sprites[sprite.name];
+    }
+
     PhysicsEngine.prototype.verticalForce = function(name, amt) {
         // What are the units of amt?
         // TODO
@@ -113,9 +118,28 @@
         return this.bodies[name].mass;
     };
 
+    PhysicsEngine.prototype.angularForce = function(name, amt) {
+        Body.setAngularVelocity(this.bodies[name], +amt);
+    };
+
+    PhysicsEngine.prototype.angularForceLeft = function(name, amt) {
+        Body.setAngularVelocity(this.bodies[name], -amt);
+    };
+
     globals.PhysicsEngine = PhysicsEngine;
 
     // Overrides for the PhysicsEngine
+    //SpriteMorph.prototype._gotoXY = SpriteMorph.prototype.gotoXY;
+    //SpriteMorph.prototype.gotoXY = function(x, y, justMe) {
+        //this._gotoXY.call(x, y, justMe);
+    //};
+
+    IDE_Morph.prototype._removeSprite = IDE_Morph.prototype.removeSprite;
+    IDE_Morph.prototype.removeSprite = function(sprite) {
+        this.stage.physics.removeSprite(sprite);
+        this._removeSprite.call(this, sprite);
+    };
+
     var oldStep = StageMorph.prototype.step;
     StageMorph.prototype.step = function() {
         oldStep.call(this);

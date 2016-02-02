@@ -1822,10 +1822,17 @@ SpriteMorph.prototype.blockTemplates = function (category) {
 
     if (cat === 'motion') {
 
-        blocks.push(block('forward'));
-        blocks.push(block('turn'));
-        blocks.push(block('turnLeft'));
+        blocks.push(block('verticalForce'));  // FIXME: Refactor
+        blocks.push(block('horizontalForce'));  // FIXME: Refactor
+        // Angular force
+        blocks.push(block('angularForce'));  // FIXME: Refactor
+        blocks.push(block('angularForceLeft'));  // FIXME: Refactor
+        blocks.push(block('setMass'));  // FIXME: Refactor
         blocks.push('-');
+        //blocks.push(block('forward'));
+        //blocks.push(block('turn'));
+        //blocks.push(block('turnLeft'));
+        //blocks.push('-');
         blocks.push(block('setHeading'));
         blocks.push(block('doFaceTowards'));
         blocks.push('-');
@@ -1839,10 +1846,6 @@ SpriteMorph.prototype.blockTemplates = function (category) {
         blocks.push(block('setYPosition'));
         blocks.push('-');
         blocks.push(block('bounceOffEdge'));
-        blocks.push('-');
-        blocks.push(block('setMass'));  // FIXME: Refactor
-        blocks.push(block('verticalForce'));  // FIXME: Refactor
-        blocks.push(block('horizontalForce'));  // FIXME: Refactor
         blocks.push('-');
         blocks.push(watcherToggle('xPosition'));
         blocks.push(block('xPosition'));

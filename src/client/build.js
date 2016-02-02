@@ -32485,10 +32485,17 @@ SpriteMorph.prototype.blockTemplates = function (category) {
 
     if (cat === 'motion') {
 
-        blocks.push(block('forward'));
-        blocks.push(block('turn'));
-        blocks.push(block('turnLeft'));
+        blocks.push(block('verticalForce'));  // FIXME: Refactor
+        blocks.push(block('horizontalForce'));  // FIXME: Refactor
+        // Angular force
+        blocks.push(block('angularForce'));  // FIXME: Refactor
+        blocks.push(block('angularForceLeft'));  // FIXME: Refactor
+        blocks.push(block('setMass'));  // FIXME: Refactor
         blocks.push('-');
+        //blocks.push(block('forward'));
+        //blocks.push(block('turn'));
+        //blocks.push(block('turnLeft'));
+        //blocks.push('-');
         blocks.push(block('setHeading'));
         blocks.push(block('doFaceTowards'));
         blocks.push('-');
@@ -32502,10 +32509,6 @@ SpriteMorph.prototype.blockTemplates = function (category) {
         blocks.push(block('setYPosition'));
         blocks.push('-');
         blocks.push(block('bounceOffEdge'));
-        blocks.push('-');
-        blocks.push(block('setMass'));  // FIXME: Refactor
-        blocks.push(block('verticalForce'));  // FIXME: Refactor
-        blocks.push(block('horizontalForce'));  // FIXME: Refactor
         blocks.push('-');
         blocks.push(watcherToggle('xPosition'));
         blocks.push(block('xPosition'));
@@ -64734,6 +64737,20 @@ var Common = require('../core/Common');
 // Sprite support for physics blocks
 (function(global) {
     var ForceBlocks = {
+        angularForce: {
+            only: SpriteMorph,
+            type: 'command',
+            category: 'motion',
+            spec: 'apply %clockwise force of %n',
+            defaults: [10]
+        },
+        angularForceLeft: {
+            only: SpriteMorph,
+            type: 'command',
+            category: 'motion',
+            spec: 'apply %counterclockwise force of %n',
+            defaults: [10]
+        },
         verticalForce: {
             only: SpriteMorph,
             type: 'command',
@@ -64775,34 +64792,33 @@ var Common = require('../core/Common');
 
     SpriteMorph.prototype.verticalForce = function(amt) {
         var stage = this.parentThatIsA(StageMorph);
-        if (!stage) {
-            console.error('verticalForce has no stage ref!');
-        }
         stage.physics.verticalForce(this.name, amt);
     };
 
     SpriteMorph.prototype.horizontalForce = function(amt) {
         var stage = this.parentThatIsA(StageMorph);
-        if (!stage) {
-            console.error('horizontalForce has no stage ref!');
-        }
         stage.physics.horizontalForce(this.name, amt);
     };
 
     SpriteMorph.prototype.mass = function(amt) {
         var stage = this.parentThatIsA(StageMorph);
-        if (!stage) {
-            console.error('getMass has no stage ref!');
-        }
         return stage.physics.getMass(this.name, amt);
     };
 
     SpriteMorph.prototype.setMass = function(amt) {
         var stage = this.parentThatIsA(StageMorph);
-        if (!stage) {
-            console.error('setMass has no stage ref!');
-        }
         stage.physics.setMass(this.name, amt);
+    };
+
+    SpriteMorph.prototype.angularForce = function(amt) {
+        var stage = this.parentThatIsA(StageMorph);
+        console.log('force...' + amt);
+        stage.physics.angularForce(this.name, amt);
+    };
+
+    SpriteMorph.prototype.angularForceLeft = function(amt) {
+        var stage = this.parentThatIsA(StageMorph);
+        stage.physics.angularForceLeft(this.name, amt);
     };
 
 })(this);
@@ -64829,13 +64845,13 @@ var Common = require('../core/Common');
     };
 
     var PhysicsEngine = function(stage) {
-        this.world = World.create({gravity: {x: 0, y: 0, scale: 0}});
+        //this.world = World.create({gravity: {x: 0, y: 0, scale: 0}});
         this.engine = Engine.create({
             render: {
                 controller: Renderer
             }
         });
-        this.engine.world = this.world;
+        //this.engine.world = this.world;
         this.sprites = {};
         this.bodies = {};
 
@@ -64868,9 +64884,8 @@ var Common = require('../core/Common');
                 newX = point.x;
                 newY = -point.y;  // engine is inverted; stage is not
 
-                point = sprite.center();
-                oldX = point.x;
-                oldY = point.y;
+                oldX = sprite.xPosition();
+                oldY = sprite.yPosition();
 
                 // Set the center and rotation for each sprite
                 if (newX !== oldX || newY !== oldY) {
@@ -64899,6 +64914,12 @@ var Common = require('../core/Common');
         World.add(this.engine.world, [box]);
     };
 
+    PhysicsEngine.prototype.removeSprite = function(sprite) {
+        World.remove(this.engine.world, this.bodies[sprite.name]);
+        delete this.bodies[sprite.name];
+        delete this.sprites[sprite.name];
+    }
+
     PhysicsEngine.prototype.verticalForce = function(name, amt) {
         // What are the units of amt?
         // TODO
@@ -64921,9 +64942,28 @@ var Common = require('../core/Common');
         return this.bodies[name].mass;
     };
 
+    PhysicsEngine.prototype.angularForce = function(name, amt) {
+        Body.setAngularVelocity(this.bodies[name], +amt);
+    };
+
+    PhysicsEngine.prototype.angularForceLeft = function(name, amt) {
+        Body.setAngularVelocity(this.bodies[name], -amt);
+    };
+
     globals.PhysicsEngine = PhysicsEngine;
 
     // Overrides for the PhysicsEngine
+    //SpriteMorph.prototype._gotoXY = SpriteMorph.prototype.gotoXY;
+    //SpriteMorph.prototype.gotoXY = function(x, y, justMe) {
+        //this._gotoXY.call(x, y, justMe);
+    //};
+
+    IDE_Morph.prototype._removeSprite = IDE_Morph.prototype.removeSprite;
+    IDE_Morph.prototype.removeSprite = function(sprite) {
+        this.stage.physics.removeSprite(sprite);
+        this._removeSprite.call(this, sprite);
+    };
+
     var oldStep = StageMorph.prototype.step;
     StageMorph.prototype.step = function() {
         oldStep.call(this);

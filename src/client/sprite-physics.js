@@ -1,6 +1,20 @@
 // Sprite support for physics blocks
 (function(global) {
     var ForceBlocks = {
+        angularForce: {
+            only: SpriteMorph,
+            type: 'command',
+            category: 'motion',
+            spec: 'apply %clockwise force of %n',
+            defaults: [10]
+        },
+        angularForceLeft: {
+            only: SpriteMorph,
+            type: 'command',
+            category: 'motion',
+            spec: 'apply %counterclockwise force of %n',
+            defaults: [10]
+        },
         verticalForce: {
             only: SpriteMorph,
             type: 'command',
@@ -42,34 +56,33 @@
 
     SpriteMorph.prototype.verticalForce = function(amt) {
         var stage = this.parentThatIsA(StageMorph);
-        if (!stage) {
-            console.error('verticalForce has no stage ref!');
-        }
         stage.physics.verticalForce(this.name, amt);
     };
 
     SpriteMorph.prototype.horizontalForce = function(amt) {
         var stage = this.parentThatIsA(StageMorph);
-        if (!stage) {
-            console.error('horizontalForce has no stage ref!');
-        }
         stage.physics.horizontalForce(this.name, amt);
     };
 
     SpriteMorph.prototype.mass = function(amt) {
         var stage = this.parentThatIsA(StageMorph);
-        if (!stage) {
-            console.error('getMass has no stage ref!');
-        }
         return stage.physics.getMass(this.name, amt);
     };
 
     SpriteMorph.prototype.setMass = function(amt) {
         var stage = this.parentThatIsA(StageMorph);
-        if (!stage) {
-            console.error('setMass has no stage ref!');
-        }
         stage.physics.setMass(this.name, amt);
+    };
+
+    SpriteMorph.prototype.angularForce = function(amt) {
+        var stage = this.parentThatIsA(StageMorph);
+        console.log('force...' + amt);
+        stage.physics.angularForce(this.name, amt);
+    };
+
+    SpriteMorph.prototype.angularForceLeft = function(amt) {
+        var stage = this.parentThatIsA(StageMorph);
+        stage.physics.angularForceLeft(this.name, amt);
     };
 
 })(this);
