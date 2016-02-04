@@ -31,6 +31,7 @@ var jsFiles = [
     'table',
 
     // physics
+    'download',
     'matter',
     'renderer',
     'sprite-physics',

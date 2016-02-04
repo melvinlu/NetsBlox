@@ -3,10 +3,10 @@
 // stage and the matterjs physics engine
 (function(globals) {
     'use strict';
-    var Engine = Matter.Engine,
-        World = Matter.World,
-        Body = Matter.Body,
-        Bodies = Matter.Bodies,
+    var Engine = MatterDev.Engine,
+        World = MatterDev.World,
+        Body = MatterDev.Body,
+        Bodies = MatterDev.Bodies,
         CLONE_ID = 0;
 
     // This is a renderer for matter.js and netsblox
@@ -23,11 +23,7 @@
 
     var PhysicsEngine = function(stage) {
         this.world = World.create({gravity: {x: 0, y: 0, scale: 0}});
-        this.engine = Engine.create({
-            render: {
-                controller: Renderer
-            }
-        });
+        this.engine = Engine.create();
         this.engine.world = this.world;
         this.sprites = {};
         this.clones = {};
@@ -47,8 +43,6 @@
             var left = Bodies.rectangle(-width/2-maxX, 0, width, height, borderSettings),
             right = Bodies.rectangle(maxX+width/2, 0, width, height, borderSettings);
 
-        console.log('left/right at: ' + maxX);
-        console.log('top/bottom at: ' + maxY);
         World.add(this.engine.world, [top, bottom, left, right]);
 
         this.lastUpdated = Date.now();
