@@ -56,33 +56,33 @@
 
     SpriteMorph.prototype.verticalForce = function(amt) {
         var stage = this.parentThatIsA(StageMorph);
-        stage.physics.verticalForce(this.name, amt);
+        stage.physics.verticalForce(this, amt);
     };
 
     SpriteMorph.prototype.horizontalForce = function(amt) {
         var stage = this.parentThatIsA(StageMorph);
-        stage.physics.horizontalForce(this.name, amt);
+        stage.physics.horizontalForce(this, amt);
     };
 
     SpriteMorph.prototype.mass = function(amt) {
         var stage = this.parentThatIsA(StageMorph);
-        return stage.physics.getMass(this.name, amt);
+        return stage.physics.getMass(this, amt);
     };
 
     SpriteMorph.prototype.setMass = function(amt) {
         var stage = this.parentThatIsA(StageMorph);
-        stage.physics.setMass(this.name, amt);
+        stage.physics.setMass(this, amt);
     };
 
     SpriteMorph.prototype.angularForce = function(amt) {
         var stage = this.parentThatIsA(StageMorph);
         console.log('force...' + amt);
-        stage.physics.angularForce(this.name, amt);
+        stage.physics.angularForce(this, amt);
     };
 
     SpriteMorph.prototype.angularForceLeft = function(amt) {
         var stage = this.parentThatIsA(StageMorph);
-        stage.physics.angularForceLeft(this.name, amt);
+        stage.physics.angularForceLeft(this, amt);
     };
 
 })(this);

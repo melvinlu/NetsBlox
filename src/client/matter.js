@@ -6339,9 +6339,9 @@ module.exports = Bounds;
      */
     Bounds.update = function(bounds, vertices, velocity) {
         bounds.min.x = Number.MAX_VALUE;
-        bounds.max.x = Number.MIN_VALUE;
+        bounds.max.x = -Number.MAX_VALUE;
         bounds.min.y = Number.MAX_VALUE;
-        bounds.max.y = Number.MIN_VALUE;
+        bounds.max.y = -Number.MAX_VALUE;
 
         for (var i = 0; i < vertices.length; i++) {
             var vertex = vertices[i];
