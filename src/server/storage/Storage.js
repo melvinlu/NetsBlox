@@ -31,6 +31,8 @@ Storage.prototype.connect = function(callback) {
 };
 
 Storage.prototype.onDatabaseConnected = function() {
+    // Add any seeds here
+    // TODO
 };
 
 module.exports = Storage;

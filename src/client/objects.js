@@ -431,10 +431,18 @@ SpriteMorph.prototype.blockTemplates = function (category) {
 
     if (cat === 'motion') {
 
-        blocks.push(block('forward'));
-        blocks.push(block('turn'));
-        blocks.push(block('turnLeft'));
+        blocks.push(block('applyForceForward'));  // FIXME: Refactor
+        blocks.push(block('applyForce'));  // FIXME: Refactor
+        // Angular force (torque)
+        blocks.push(block('angularForce'));  // FIXME: Refactor
+        blocks.push(block('angularForceLeft'));  // FIXME: Refactor
+        blocks.push(block('setMass'));  // FIXME: Refactor
+        blocks.push(block('setGravity'));  // FIXME: Refactor
         blocks.push('-');
+        //blocks.push(block('forward'));
+        //blocks.push(block('turn'));
+        //blocks.push(block('turnLeft'));
+        //blocks.push('-');
         blocks.push(block('setHeading'));
         blocks.push(block('doFaceTowards'));
         blocks.push('-');
@@ -455,6 +463,8 @@ SpriteMorph.prototype.blockTemplates = function (category) {
         blocks.push(block('yPosition'));
         blocks.push(watcherToggle('direction'));
         blocks.push(block('direction'));
+        blocks.push(watcherToggle('mass'));
+        blocks.push(block('mass'));
 
     } else if (cat === 'looks') {
 
@@ -963,6 +973,7 @@ StageMorph.prototype.init = function (globals) {
         name: 'message',
         fields: ['msg']
     });
+    this.physics = new PhysicsEngine(this);
     this._init(globals);
 };
 
@@ -1197,7 +1208,6 @@ StageMorph.prototype.blockTemplates = function (category) {
         blocks.push(block('getTempo'));
 
     // for debugging: ///////////////
-
         if (this.world().isDevMode) {
             blocks.push('-');
             txt = new TextMorph(localize(

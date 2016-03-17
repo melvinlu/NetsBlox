@@ -28,7 +28,14 @@ var jsFiles = [
     'sha512',
     'message-inputs',
     'message-listeners',
-    'table'
+    'table',
+
+    // physics
+    'download',
+    'matter',
+    'renderer',
+    'sprite-physics',
+    'netsblox-physics'
 ].map(name => path.join(srcPath, name + '.js'));
 
 // TODO: Add uglify, etc
