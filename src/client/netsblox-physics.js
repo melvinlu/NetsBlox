@@ -14,6 +14,7 @@
         this.sprites = {};
         this.clones = {};
         this.bodies = {};
+        this.ground = null;
 
         this.enableGround();
         this.fixedStepSize = 1/60;
@@ -29,6 +30,21 @@
 
         this.lastUpdated = time;
         this.updateUI();
+    };
+
+    PhysicsEngine.prototype.enableGround = function() {
+        this.ground = new p2.Body({
+            mass: 0,
+            position: [0, 180]
+        });
+
+        var shape = new p2.Box({
+            width: 5000,
+            height: 1
+        });
+
+        this.ground.addShape(shape);
+        this.world.addBody(this.ground);
     };
 
     PhysicsEngine.prototype.updateUI = function() {
@@ -204,6 +220,12 @@
     };
 
     PhysicsEngine.prototype.setGravity = function(amt) {
+        if (amt === 0 && this.ground) {
+            this.world.removeBody(this.ground);
+            this.ground = null;
+        } else if (!this.ground){
+            this.enableGround();
+        }
         this.world.gravity = [0, amt];
     };
 
