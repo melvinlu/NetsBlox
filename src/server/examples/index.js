@@ -95,6 +95,13 @@ var examples = {};
             Hangman: example('SimpleHangman')
         },
         primarySeat: 'Hangman'
+    },
+    {
+        tableName: 'PhysicsMovement',
+        cachedProjects: {
+            owner: example('PhysicsMovement')
+        },
+        primarySeat: 'owner'
     }
     // Add more examples?
     // Fox.xml
