@@ -14,19 +14,37 @@
         this.sprites = {};
         this.clones = {};
         this.bodies = {};
+        this.ground = null;
 
-        this.lastUpdated = Date.now()/10;
+        this.enableGround();
+        this.fixedStepSize = 1/60;
+        this.lastUpdated = Date.now()/100;
         this.lastDelta = 0;
     };
 
     PhysicsEngine.prototype.step = function() {
-        var time = Date.now()/10,  // TODO: Fix the interval...
+        var time = Date.now()/100,  // TODO: Fix the interval...
             delta = time - this.lastUpdated;
 
-        this.world.step(delta);
+        this.world.step(this.fixedStepSize, delta);
 
         this.lastUpdated = time;
         this.updateUI();
+    };
+
+    PhysicsEngine.prototype.enableGround = function() {
+        this.ground = new p2.Body({
+            mass: 0,
+            position: [0, 180]
+        });
+
+        var shape = new p2.Box({
+            width: 5000,
+            height: 1
+        });
+
+        this.ground.addShape(shape);
+        this.world.addBody(this.ground);
     };
 
     PhysicsEngine.prototype.updateUI = function() {
@@ -202,6 +220,12 @@
     };
 
     PhysicsEngine.prototype.setGravity = function(amt) {
+        if (amt === 0 && this.ground) {
+            this.world.removeBody(this.ground);
+            this.ground = null;
+        } else if (!this.ground){
+            this.enableGround();
+        }
         this.world.gravity = [0, amt];
     };
 
