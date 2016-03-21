@@ -33,14 +33,17 @@
     };
 
     PhysicsEngine.prototype.enableGround = function() {
-        this.ground = new p2.Body({
-            mass: 0,
-            position: [0, 180]
+        var height = 100,
+            shape;
+
+        shape = new p2.Box({
+            width: 5000,
+            height: height
         });
 
-        var shape = new p2.Box({
-            width: 5000,
-            height: 1
+        this.ground = new p2.Body({
+            mass: 0,
+            position: [0, 170+height/2]
         });
 
         this.ground.addShape(shape);
@@ -180,7 +183,7 @@
             width = sprite.image.width,
             height = sprite.image.height,
             data = cxt.getImageData(1, 1, width, height).data,
-            granularity = 5,
+            granularity = 1,
             vertices = [],
             shape,
             row = 0,
