@@ -1,4 +1,4 @@
-/* global p2, Point, Morph, SpriteMorph, radians, StageMorph, IDE_Morph */
+/* global p2, Point, Morph, SpriteMorph, radians, StageMorph, IDE_Morph, degrees */
 // This file defines the physics engine that is used in netsblox.
 // That is, this is the netsblox object that interfaces with the
 // stage and the matterjs physics engine
@@ -84,15 +84,21 @@
             }
 
             // Set the rotation for each sprite
-            angle = body.angle % 2 * Math.PI;
+            angle = body.angle % (2 * Math.PI);
             if (angle < 0) {
                 angle += 2 * Math.PI;
             }
-            direction = angle * 180/Math.PI;
-            if (sprite.direction() !== direction) {
+            direction = degrees(angle);
+            if (this.round(sprite.direction(), 2) !== this.round(direction, 2)) {
                 sprite.silentSetHeading(direction);
             }
         }
+    };
+
+    PhysicsEngine.prototype.round = function(num, places) {
+        places = places || 0;
+        var mult = Math.pow(10, places);
+        return Math.round(num * mult)/mult;
     };
 
     SpriteMorph.prototype.silentSetHeading = function(degrees) {
@@ -125,6 +131,19 @@
             }
             part._gotoXY(trg.x, trg.y);
         });
+    };
+
+    SpriteMorph.prototype._setHeading = SpriteMorph.prototype.setHeading;
+    SpriteMorph.prototype.setHeading = function(degrees) {
+        var stage = this.parentThatIsA(StageMorph);
+        // Update the physics engine
+        stage.physics.setDirection(this, degrees);
+    };
+
+    PhysicsEngine.prototype.setDirection = function(sprite, degrees) {
+        var name = this._getSpriteName(sprite),
+            body = this.bodies[name];
+        body.angle = radians(degrees);
     };
 
     PhysicsEngine.prototype.addSprite = function(sprite) {
@@ -205,7 +224,7 @@
     PhysicsEngine.prototype.setPosition = function(sprite, x, y) {
         var name = this._getSpriteName(sprite),
             body = this.bodies[name];
-        body.position = [x, y];
+        body.position = [x, -y];
     };
 
     PhysicsEngine.prototype.applyForce = function(sprite, amt, angle) {
