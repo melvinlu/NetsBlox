@@ -149,6 +149,20 @@
         body.angle = radians(degrees);
     };
 
+    PhysicsEngine.prototype.updateSize = function(sprite) {
+        var name = this._getSpriteName(sprite),
+            body = this.bodies[name];
+
+        // Remove the old shape
+        for (var i = body.shapes.length; i--;) {
+            body.removeShape(body.shapes[0]);
+        }
+
+        // Add the new shape
+        var shape = this.getShape(sprite);
+        body.addShape(shape);
+    };
+
     PhysicsEngine.prototype.addSprite = function(sprite) {
         var x = sprite.xPosition(),
             y = -sprite.yPosition(),  // engine is inverted; stage is not
@@ -180,8 +194,12 @@
 
     PhysicsEngine.prototype.getShape = function(sprite) {
         var cxt = sprite.image.getContext('2d'),
-            width = sprite.image.width,
-            height = sprite.image.height,
+            //width = sprite.image.width,
+            //height = sprite.image.height,
+            // FIXME: Add the precise bounding box support
+            image = sprite.costume || sprite.image,
+            width = sprite.costume ? sprite.costume.width() : sprite.image.width,
+            height = sprite.costume ? sprite.costume.height() : sprite.image.height,
             data = cxt.getImageData(1, 1, width, height).data,
             granularity = 1,
             vertices = [],
@@ -233,7 +251,11 @@
             vertices: vertices
         });
 
-        return shape;
+        //return shape;
+        return new p2.Box({
+            width: height,
+            height: width
+        });
     };
 
     PhysicsEngine.prototype.removeSprite = function(sprite) {
@@ -388,6 +410,14 @@
         superFn.call(this, pos);
         // Update the physics engine
         // TODO
+    };
+
+    SpriteMorph.prototype._wearCostume = SpriteMorph.prototype.wearCostume;
+    SpriteMorph.prototype.wearCostume = function(costume) {
+        this._wearCostume(costume);
+        // Update the shape
+        var stage = this.parentThatIsA(StageMorph);
+        stage.physics.updateSize(this);
     };
 
 })(this);
