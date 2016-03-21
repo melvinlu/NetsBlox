@@ -158,7 +158,7 @@
                 height: height
             }),
             body = new p2.Body({
-                mass: 5,
+                mass: 2,
                 position: [x, y]
             }),
             name = this._getSpriteName(sprite);
