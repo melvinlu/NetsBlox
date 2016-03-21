@@ -7,28 +7,28 @@
             type: 'command',
             category: 'motion',
             spec: 'apply %clockwise torque of %n',
-            defaults: [10]
+            defaults: [2000]
         },
         angularForceLeft: {
             only: SpriteMorph,
             type: 'command',
             category: 'motion',
             spec: 'apply %counterclockwise torque of %n',
-            defaults: [10]
+            defaults: [2000]
         },
         applyForceForward: {
             only: SpriteMorph,
             type: 'command',
             category: 'motion',
             spec: 'apply force of %n',
-            defaults: [10]
+            defaults: [500]
         },
         applyForce: {
             only: SpriteMorph,
             type: 'command',
             category: 'motion',
             spec: 'apply force %n in direction %dir',
-            defaults: [10]
+            defaults: [50]
         },
         setMass: {
             only: SpriteMorph,
