@@ -101,45 +101,6 @@
         return Math.round(num * mult)/mult;
     };
 
-    SpriteMorph.prototype.silentSetHeading = function(degrees) {
-        // Bypass any position setting in the physics engine
-        var x = this.xPosition(),
-            y = this.yPosition(),
-            dir = (+degrees || 0),
-            turn = dir - this.heading;
-
-        // apply to myself
-        if (this.rotationStyle) {  // optimization, only redraw if rotatable
-            this.changed();
-            SpriteMorph.uber.setHeading.call(this, dir);
-
-            var penState = this.isDown;
-            this.isDown = false;
-            this._gotoXY(x, y, true);  // just me
-            this.isDown = penState;
-            this.positionTalkBubble();
-        } else {
-            this.heading = parseFloat(degrees) % 360;
-        }
-
-        // propagate to my parts
-        this.parts.forEach(function (part) {
-            var pos = new Point(part.xPosition(), part.yPosition()),
-                trg = pos.rotateBy(radians(turn), new Point(x, y));
-            if (part.rotatesWithAnchor) {
-                part.turn(turn);
-            }
-            part._gotoXY(trg.x, trg.y);
-        });
-    };
-
-    SpriteMorph.prototype._setHeading = SpriteMorph.prototype.setHeading;
-    SpriteMorph.prototype.setHeading = function(degrees) {
-        var stage = this.parentThatIsA(StageMorph);
-        // Update the physics engine
-        stage.physics.setDirection(this, degrees);
-    };
-
     PhysicsEngine.prototype.setDirection = function(sprite, degrees) {
         var name = this._getSpriteName(sprite),
             body = this.bodies[name];
@@ -275,7 +236,46 @@
 
     globals.PhysicsEngine = PhysicsEngine;
 
-    // Overrides for the PhysicsEngine
+    // Overrides for SpriteMorph
+    SpriteMorph.prototype.silentSetHeading = function(degrees) {
+        // Bypass any position setting in the physics engine
+        var x = this.xPosition(),
+            y = this.yPosition(),
+            dir = (+degrees || 0),
+            turn = dir - this.heading;
+
+        // apply to myself
+        if (this.rotationStyle) {  // optimization, only redraw if rotatable
+            this.changed();
+            SpriteMorph.uber.setHeading.call(this, dir);
+
+            var penState = this.isDown;
+            this.isDown = false;
+            this._gotoXY(x, y, true);  // just me
+            this.isDown = penState;
+            this.positionTalkBubble();
+        } else {
+            this.heading = parseFloat(degrees) % 360;
+        }
+
+        // propagate to my parts
+        this.parts.forEach(function (part) {
+            var pos = new Point(part.xPosition(), part.yPosition()),
+                trg = pos.rotateBy(radians(turn), new Point(x, y));
+            if (part.rotatesWithAnchor) {
+                part.turn(turn);
+            }
+            part._gotoXY(trg.x, trg.y);
+        });
+    };
+
+    SpriteMorph.prototype._setHeading = SpriteMorph.prototype.setHeading;
+    SpriteMorph.prototype.setHeading = function(degrees) {
+        var stage = this.parentThatIsA(StageMorph);
+        // Update the physics engine
+        stage.physics.setDirection(this, degrees);
+    };
+
     SpriteMorph.prototype._setName = SpriteMorph.prototype.setName;
     SpriteMorph.prototype.setName = function(name) {
         var oldName = this.name,
