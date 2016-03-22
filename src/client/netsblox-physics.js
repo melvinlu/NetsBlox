@@ -33,14 +33,17 @@
     };
 
     PhysicsEngine.prototype.enableGround = function() {
-        this.ground = new p2.Body({
-            mass: 0,
-            position: [0, 180]
+        var height = 100,
+            shape;
+
+        shape = new p2.Box({
+            width: 5000,
+            height: height
         });
 
-        var shape = new p2.Box({
-            width: 5000,
-            height: 1
+        this.ground = new p2.Body({
+            mass: 0,
+            position: [0, 170+height/2]
         });
 
         this.ground.addShape(shape);
@@ -107,24 +110,33 @@
         body.angle = radians(degrees);
     };
 
+    PhysicsEngine.prototype.updateSize = function(sprite) {
+        var name = this._getSpriteName(sprite),
+            body = this.bodies[name];
+
+        // Remove the old shape
+        for (var i = body.shapes.length; i--;) {
+            body.removeShape(body.shapes[0]);
+        }
+
+        // Add the new shape
+        var shape = this.getShape(sprite);
+        body.addShape(shape);
+    };
+
     PhysicsEngine.prototype.addSprite = function(sprite) {
         var x = sprite.xPosition(),
             y = -sprite.yPosition(),  // engine is inverted; stage is not
-            width = sprite.width(),
-            height = sprite.height(),
             // TODO: Make this shape match the costume...
             // TODO: Set the mass to a reasonable amount
-            box = new p2.Box({
-                width: width,
-                height: height
-            }),
+            shape = this.getShape(sprite),
             body = new p2.Body({
                 mass: 2,
                 position: [x, y]
             }),
             name = this._getSpriteName(sprite);
 
-        body.addShape(box);
+        body.addShape(shape);
         if (sprite.isClone) {
             // Create a unique id for the sprite
             name = this._getCloneName();
@@ -139,6 +151,72 @@
         this.bodies[name] = body;
 
         this.world.addBody(body);
+    };
+
+    PhysicsEngine.prototype.getShape = function(sprite) {
+        var cxt = sprite.image.getContext('2d'),
+            //width = sprite.image.width,
+            //height = sprite.image.height,
+            // FIXME: Add the precise bounding box support
+            image = sprite.costume || sprite.image,
+            width = sprite.costume ? sprite.costume.width() : sprite.image.width,
+            height = sprite.costume ? sprite.costume.height() : sprite.image.height,
+            data = cxt.getImageData(1, 1, width, height).data,
+            granularity = 1,
+            vertices = [],
+            shape,
+            row = 0,
+            col = 0,
+            index,
+            isEmpty;
+
+        // Get the left most points for every row of pixels
+        while (row < height) {
+
+            // get the first non-zero column
+            col = -1;
+            isEmpty = true;
+            while (col < width && isEmpty) {
+                col++;
+                index = row*width*4 + col*4;
+                isEmpty = !(data[index] + data[index+1] + data[index+2] + data[index+3]);
+            }
+            if (!isEmpty) {
+                vertices.unshift([col, row]);
+            }
+
+            row += granularity;
+        }
+
+        // Get the right most points for every row of pixels
+        row = height - 1;
+        while (row > 0) {
+
+            // get the last non-zero place
+            col = width;
+            isEmpty = true;
+            while (col > 0 && isEmpty) {
+                col--;
+                index = row*width*4 + col*4;
+                isEmpty = !(data[index] + data[index+1] + data[index+2] + data[index+3]);
+            }
+            if (!isEmpty) {
+                vertices.unshift([col, row]);
+            }
+
+            row -= granularity;
+        }
+
+        // Create a custom shape from this
+        shape = new p2.Convex({
+            vertices: vertices
+        });
+
+        //return shape;
+        return new p2.Box({
+            width: height,
+            height: width
+        });
     };
 
     PhysicsEngine.prototype.removeSprite = function(sprite) {
@@ -332,6 +410,14 @@
         superFn.call(this, pos);
         // Update the physics engine
         // TODO
+    };
+
+    SpriteMorph.prototype._wearCostume = SpriteMorph.prototype.wearCostume;
+    SpriteMorph.prototype.wearCostume = function(costume) {
+        this._wearCostume(costume);
+        // Update the shape
+        var stage = this.parentThatIsA(StageMorph);
+        stage.physics.updateSize(this);
     };
 
 })(this);
