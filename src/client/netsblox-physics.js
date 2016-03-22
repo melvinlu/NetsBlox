@@ -43,7 +43,7 @@
 
         this.ground = new p2.Body({
             mass: 0,
-            position: [0, 170+height/2]
+            position: [0, 180+height/2]
         });
 
         this.ground.addShape(shape);
