@@ -10,13 +10,13 @@ SpriteMorph.prototype.categories =
         'pen',
         'variables',
         'services',
-        'custom',
+        'physics',
         'lists',
         'other'
     ];
 
 SpriteMorph.prototype.blockColor.services = new Color(217, 77, 17);
-SpriteMorph.prototype.blockColor.custom = new Color(120, 120, 120);
+SpriteMorph.prototype.blockColor.physics = new Color(120, 120, 120);
 
 SpriteMorph.prototype.freshPalette = function (category) {
     var palette = new ScrollFrameMorph(null, null, this.sliderColor),
@@ -168,7 +168,7 @@ SpriteMorph.prototype.freshPalette = function (category) {
 
     // global custom blocks:
 
-    if (category === 'custom') {
+    if (category === 'physics') {
         if (stage) {
             y += unit * 1.6;
 
@@ -431,18 +431,10 @@ SpriteMorph.prototype.blockTemplates = function (category) {
 
     if (cat === 'motion') {
 
-        blocks.push(block('applyForceForward'));  // FIXME: Refactor
-        blocks.push(block('applyForce'));  // FIXME: Refactor
-        // Angular force (torque)
-        blocks.push(block('angularForce'));  // FIXME: Refactor
-        blocks.push(block('angularForceLeft'));  // FIXME: Refactor
-        blocks.push(block('setMass'));  // FIXME: Refactor
-        blocks.push(block('setGravity'));  // FIXME: Refactor
+        blocks.push(block('forward'));
+        blocks.push(block('turn'));
+        blocks.push(block('turnLeft'));
         blocks.push('-');
-        //blocks.push(block('forward'));
-        //blocks.push(block('turn'));
-        //blocks.push(block('turnLeft'));
-        //blocks.push('-');
         blocks.push(block('setHeading'));
         blocks.push(block('doFaceTowards'));
         blocks.push('-');
@@ -900,7 +892,15 @@ SpriteMorph.prototype.blockTemplates = function (category) {
             blocks.push('=');
         }
 
-    } else if (cat === 'custom') {
+    } else if (cat === 'physics') {
+        blocks.push(block('applyForceForward'));
+        blocks.push(block('applyForce'));
+        // Angular force (torque)
+        blocks.push(block('angularForce'));
+        blocks.push(block('angularForceLeft'));
+        blocks.push(block('setMass'));
+        blocks.push(block('setGravity'));
+        blocks.push('-');
         button = new PushButtonMorph(
             null,
             function () {
@@ -1537,7 +1537,7 @@ StageMorph.prototype.blockTemplates = function (category) {
             blocks.push('=');
         }
 
-    } else if (cat === 'custom') {
+    } else if (cat === 'physics') {
         button = new PushButtonMorph(
             null,
             function () {
