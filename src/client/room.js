@@ -30,6 +30,7 @@ function RoomMorph(ide) {
 
     // Set up the ownerId
     this.ownerId = null;
+    this.isOwner = false;
     this.nextRoom = null;  // next room info
     // The projectName is used for the roleId
     if (!this.ide.projectName) {
@@ -53,7 +54,7 @@ function RoomMorph(ide) {
 }
 
 RoomMorph.prototype.isEditable = function() {
-    return this.ownerId === SnapCloud.username;
+    return this.isOwner || this.ownerId === SnapCloud.username;
 };
 
 RoomMorph.prototype._onNameChanged = function(newName) {
@@ -66,8 +67,9 @@ RoomMorph.prototype._onNameChanged = function(newName) {
     }
 };
 
-RoomMorph.prototype.update = function(ownerId, name, roles) {
+RoomMorph.prototype.update = function(isOwner, ownerId, name, roles) {
     // Update the roles, etc
+    this.isOwner = isOwner;
     this.ownerId = ownerId;
     this._name = name;
     this.roles = roles;
@@ -320,10 +322,15 @@ RoomMorph.prototype.inviteUser = function (role) {
         callback;
 
     callback = function(friends) {
-        friends.push('myself');
-        myself._inviteFriendDialog(role, friends);
+        if (SnapCloud.username) {
+            friends.push('myself');
+        }
+        if (friends.length) {
+            myself._inviteFriendDialog(role, friends);
+        } else {
+            myself.ide.showMessage('No one available to invite. Try logging in.', 2);
+        }
     };
-    // TODO: Check if the user is the owner
     if (SnapCloud.username) {
         SnapCloud.getFriendList(callback,
             function (err, lbl) {

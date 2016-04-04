@@ -62,7 +62,8 @@ class NetsBloxSocket {
     }
 
     isOwner () {
-        return this._room && this._room.owner.username === this.username;
+        return this._room && (this._room.owner === this ||
+            this._room.owner.username === this.username);
     }
 
     _initialize () {

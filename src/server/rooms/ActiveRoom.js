@@ -203,7 +203,10 @@ class ActiveRoom {
         // Send the room info to the socket
         var msg = this.getStateMsg();
 
-        this.sockets().forEach(socket => socket.send(msg));
+        this.sockets().forEach(socket => {
+            msg.isOwner = socket.isOwner();
+            socket.send(msg);
+        });
 
         this.save();
     }

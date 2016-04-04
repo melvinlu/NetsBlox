@@ -71,74 +71,42 @@ Cloud.prototype.login = function (
 };
 
 Cloud.prototype.cloneRole = function(onSuccess, onFail, args) {
-    var myself = this;
-
-    this.reconnect(
-        function () {
-            myself.callService(
-                'cloneRole',
-                onSuccess,
-                onFail,
-                args
-            );
-        },
-        function(err) {
-            myself.ide.showMessage(err, 2);
-        }
+    this.callRoomService(
+        'cloneRole',
+        onSuccess,
+        onFail,
+        args
     );
 };
 
 Cloud.prototype.moveToRole = function(onSuccess, onFail, args) {
-    var myself = this;
-
-    this.reconnect(
-        function () {
-            myself.callService(
-                'moveToRole',
-                onSuccess,
-                onFail,
-                args
-            );
-        },
-        function(err) {
-            myself.ide.showMessage(err, 2);
-        }
+    this.callRoomService(
+        'moveToRole',
+        onSuccess,
+        onFail,
+        args
     );
 };
 
 Cloud.prototype.invitationResponse = function (id, accepted, onSuccess, onFail) {
-    var myself = this,
-        args = [id, accepted, this.socketId()];
+    var args = [id, accepted];
 
-    this.reconnect(
-        function () {
-            myself.callService(
-                'invitationResponse',
-                onSuccess,
-                onFail,
-                args
-            );
-        },
-        function(err) {
-            myself.ide.showMessage(err, 2);
-        }
+    this.callRoomService(
+        'invitationResponse',
+        onSuccess,
+        onFail,
+        args
     );
 };
 
 Cloud.prototype.inviteToRoom = function () {
-    var myself = this,
-        args = arguments;
+    var args = arguments;
 
-    this.reconnect(
-        function () {
-            myself.callService(
-                'inviteToRoom',
-                myself.disconnect.bind(myself),
-                nop,
-                args
-            );
-        },
-        nop
+    this.callRoomService(
+        'inviteToRoom',
+        this.disconnect.bind(this),
+        nop,
+        args
     );
 };
 
@@ -162,37 +130,27 @@ Cloud.prototype.getFriendList = function (callBack, errorCall) {
 
 Cloud.prototype.deleteRole = function(onSuccess, onFail, args) {
     var myself = this;
-    this.reconnect(
+    this.callRoomService(
+        'deleteRole',
         function () {
-            myself.callService(
-                'deleteRole',
-                function () {
-                    onSuccess.call(null);
-                    myself.disconnect();
-                },
-                onFail,
-                args
-            );
+            onSuccess.call(null);
+            myself.disconnect();
         },
-        onFail
+        onFail,
+        args
     );
 };
 
 Cloud.prototype.evictUser = function(onSuccess, onFail, args) {
     var myself = this;
-    this.reconnect(
+    this.callRoomService(
+        'evictUser',
         function () {
-            myself.callService(
-                'evictUser',
-                function () {
-                    onSuccess.call(null);
-                    myself.disconnect();
-                },
-                onFail,
-                args
-            );
+            onSuccess.call(null);
+            myself.disconnect();
         },
-        onFail
+        onFail,
+        args
     );
 };
 
@@ -225,7 +183,7 @@ Cloud.prototype.saveProject = function (ide, callBack, errorCall) {
 };
 
 // FIXME: I shouldn't have to override this...
-Cloud.prototype.callService = function (
+Cloud.prototype.rawCallService = function (
     serviceName,
     callBack,
     errorCall,
@@ -238,10 +196,6 @@ Cloud.prototype.callService = function (
         stickyUrl,
         postDict;
 
-    if (!this.session) {
-        errorCall.call(null, 'You are not connected', 'Cloud');
-        return;
-    }
     if (!service) {
         errorCall.call(
             null,
@@ -295,3 +249,27 @@ Cloud.prototype.callService = function (
     }
 };
 
+Cloud.prototype.callRoomService = function (
+    serviceName,
+    callBack,
+    errorCall,
+    args
+) {
+
+    args.push(this.socketId());
+    return this.rawCallService(serviceName, callBack, errorCall, args);
+};
+
+Cloud.prototype.callService = function (
+    serviceName,
+    callBack,
+    errorCall,
+    args
+) {
+    if (!this.session) {
+        errorCall.call(null, 'You are not connected', 'Cloud');
+        return;
+    }
+
+    return this.rawCallService(serviceName, callBack, errorCall, args);
+};
