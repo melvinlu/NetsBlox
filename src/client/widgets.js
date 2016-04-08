@@ -31,13 +31,6 @@ DialogBoxMorph.prototype.promptCredentials = function (
         currentYear = new Date().getFullYear(),
         firstYear = currentYear - 20,
         myself = this;
-    // NetsBlox addition - start
-    usr.key = 'user';
-    eml.key = 'email';
-    pw1.key = 'password';
-    pw2.key = 'password2';
-    opw.key = 'oldpassword';
-    // NetsBlox addition - end
 
     function labelText(string) {
         return new TextMorph(
@@ -373,6 +366,15 @@ DialogBoxMorph.prototype.promptCredentials = function (
         this.key = 'credentials' + title + purpose;
     }
 
+    // NetsBlox addition - start
+    usr.key = 'user';
+    eml.key = 'email';
+    pw1.key = 'password';
+    pw2.key = 'password2';
+    opw.key = 'oldpassword';
+    bmn.key = 'birth-month';
+    byr.key = 'birth-year';
+    // NetsBlox addition - end
     this.popUp(world);
 };
 
