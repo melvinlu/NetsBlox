@@ -41,9 +41,10 @@ Message.prototype.getFieldNames = function() {
 };
 
 Message.prototype.toString = function() {
-    // FIXME: Better representation would be good...
-    // Can I reuse the List graphic?
-    return this.type.name + ' Message';
+    return JSON.stringify({
+        type: this.type.name,
+        contents: this.contents
+    });
 };
 
 // MessageFrame

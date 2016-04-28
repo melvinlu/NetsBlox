@@ -33,7 +33,7 @@ InputSlotDialogMorph.prototype.init = function (
     this.slots.color = new Color(55, 55, 55); // same as palette
     this.slots.borderColor = this.slots.color.lighter(50);
     // NetsBlox addition: start
-    this.slots.setExtent(new Point((fh + 10) * 24, (fh + 10 * scale) * 11.4));
+    this.slots.setExtent(new Point((fh + 10) * 24, (fh + 10 * scale) * 12.4));
     // NetsBlox addition: end
     this.add(this.slots);
     this.createSlotTypeButtons();
@@ -67,7 +67,8 @@ InputSlotDialogMorph.prototype.fixSlotsLayout = function () {
             slots.top() + ypadding + bh * 5 + ah,
             slots.top() + ypadding + bh * 5 + ah * 2,
             // Netsblox additions: start
-            slots.top() + ypadding + bh * 5 + ah * 3
+            slots.top() + ypadding + bh * 5 + ah * 3,
+            slots.top() + ypadding + bh * 5 + ah * 4
             // Netsblox additions: end
         ],
         idx,
@@ -93,7 +94,7 @@ InputSlotDialogMorph.prototype.fixSlotsLayout = function () {
     col = 0;
     row = 5;
     // Netsblox additions: start
-    for (idx = size; idx < size + 4; idx += 1) {
+    for (idx = size; idx < size + 5; idx += 1) {
     // Netsblox additions: end
         slots.children[idx].setPosition(new Point(
             cols[col],
@@ -120,7 +121,8 @@ InputSlotDialogMorph.prototype.fixSlotsLayout = function () {
 BlockLabelFragment.prototype.setToSingleInput = function () {
     if (!this.type) {return null; } // not an input at all
     // NetsBlox addition: start
-    if (this.type === '%upvar' || this.type === '%msgType') {
+    if (this.type === '%upvar' || this.type === '%msgType' ||
+        this.type === '%msgInput') {
     // NetsBlox addition: end
         this.type = '%s';
     } else {
@@ -131,7 +133,8 @@ BlockLabelFragment.prototype.setToSingleInput = function () {
 BlockLabelFragment.prototype.setToMultipleInput = function () {
     if (!this.type) {return null; } // not an input at all
     // NetsBlox addition: start
-    if (this.type === '%upvar' || this.type === '%msgType') {
+    if (this.type === '%upvar' || this.type === '%msgType' ||
+        this.type === '%msgInput') {
     // NetsBlox addition: end
         this.type = '%s';
     }
@@ -140,13 +143,16 @@ BlockLabelFragment.prototype.setToMultipleInput = function () {
 
 BlockLabelFragment.prototype.isSingleInput = function () {
     return !this.isMultipleInput() &&
-        (this.type !== '%upvar') && (this.type !== '%msgType');
+        (this.type !== '%upvar') && (this.type !== '%msgType') &&
+        (this.type !== '%msgInput');
 };
 
 InputSlotDialogMorph.prototype.setSlotArity = function (arity) {
     if (arity === 'single') {
         this.fragment.setToSingleInput();
     } else if (arity === 'message') {
+        this.fragment.type = '%msgInput';
+    } else if (arity === 'messageType') {
         this.fragment.type = '%msgType';
     } else if (arity === 'multiple') {
         this.fragment.setToMultipleInput();
@@ -193,10 +199,18 @@ InputSlotDialogMorph.prototype.createSlotTypeButtons = function () {
     );
     // NetsBlox addition: start
     this.addSlotArityButton(
-        function () { myself.setSlotArity('message');},
+        function () { myself.setSlotArity('messageType');},
         "Message Type",
         function () {
             return myself.fragment.type === '%msgType';
+        }
+    );
+
+    this.addSlotArityButton(
+        function () { myself.setSlotArity('message');},
+        "Message",
+        function () {
+            return myself.fragment.type === '%msgInput';
         }
     );
     // NetsBlox addition: end

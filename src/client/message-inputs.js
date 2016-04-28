@@ -25,6 +25,30 @@ function MessageInputSlotMorph() {
     this.isStatic = true;
 }
 
+MessageInputSlotMorph.prototype.evaluate = function() {
+    var name = InputSlotMorph.prototype.evaluate.call(this),
+        ide = this.parentThatIsA(IDE_Morph),
+        messageType,
+        fieldNames,
+        fields,
+        msg;
+
+    messageType = ide.stage.messageTypes.getMsgType(name);
+    fieldNames = messageType.fields;
+    fields = this._msgContent.map(function(field) {
+        return field.evaluate();
+    });
+
+    // Create the message
+    msg = new Message(messageType);
+    // Set the fields
+    for (var i = fieldNames.length; i--;) {
+        msg.set(fieldNames[i], fields[i] || '');
+    }
+
+    return msg;
+};
+
 MessageInputSlotMorph.prototype.setContents = function(messageType, inputs) {
     var self = this,
         targetRole = inputs && inputs.pop ? inputs.pop() : '',

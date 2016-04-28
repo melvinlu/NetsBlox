@@ -68,30 +68,9 @@ function NetsProcess(topBlock, onComplete, context) {
     }
 }
 
-NetsProcess.prototype.doSocketMessage = function (name) {
+NetsProcess.prototype.doSocketMessage = function (msg, targetRole) {
     var ide = this.homeContext.receiver.parentThatIsA(IDE_Morph),
-        targetRole = arguments[arguments.length-1],
-        myRole = ide.projectName,  // same as seat name
-        fields = Array.prototype.slice.call(arguments, 1),
-        stage = ide.stage,
-        messageType,
-        fieldNames,
-        msg;
-
-    // If there is no name, return
-    if (!name) {
-        return;
-    }
-
-    messageType = stage.messageTypes.getMsgType(name);
-    fieldNames = messageType.fields;
-
-    // Create the message
-    msg = new Message(messageType);
-    // Set the fields
-    for (var i = fieldNames.length; i--;) {
-        msg.set(fieldNames[i], fields[i] || '');
-    }
+        myRole = ide.projectName;  // same as seat name
 
     ide.sockets.sendMessage({
         type: 'message',
@@ -140,7 +119,9 @@ NetsProcess.prototype.createRPCUrl = function (rpc, params) {
 };
 
 NetsProcess.prototype.callRPC = function (rpc, params) {
-    var url = this.createRPCUrl(rpc, params).replace(/http[s]?:\/\//, '');
+    var url;
+    params = encodeURI(params);
+    url = this.createRPCUrl(rpc, params).replace(/http[s]?:\/\//, '');
     return this.reportURL(url);
 };
 
