@@ -340,6 +340,10 @@ NetCloud.prototype.passiveLogin = function (ide, callback) {
                         ide.source = 'cloud';
                     }
                     callback();
+                } else {
+                    myself.username = null;
+                    myself.session = null;
+                    myself.password = null;
                 }
             }
         };

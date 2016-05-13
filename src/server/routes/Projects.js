@@ -71,6 +71,71 @@ var getPreview = function(project) {
     return preview;
 };
 
+// Given a room, get a role that is open and can be occupied
+var retrieveRoleWrtActive = function(room, activeRooms) {
+    var activeRoom = activeRooms[Utils.uuid(room.owner, room.name)],
+        openRole,
+        role;
+
+    // Check if it is actually the same - do the originTime's match?
+    if (activeRoom && activeRoom.originTime === room.originTime) {
+        openRole = Object.keys(activeRoom.roles)
+            .filter(role => !activeRoom.roles[role])  // not occupied
+            .shift();
+
+        trace(`room "${room.name}" is already active`);
+        if (openRole && activeRoom.cachedProjects[openRole]) {  // Send an open role and add the user
+
+            role = activeRoom.cachedProjects[openRole];
+        } else {  // If no open role w/ cache -> make a new role
+            let i = 2,
+                base;
+
+            if (!openRole) {
+                openRole = base = 'new role';
+                while (activeRoom.hasOwnProperty(openRole)) {
+                    openRole = `${base} (${i++})`;
+                }
+                trace(`creating new role "${openRole}" ` +
+                    `at "${room.name}" for ${username}`);
+            } else {
+                // TODO: This is bad. User could be losing data!
+                error(`Found open role "${openRole}" but it is not cached!`);
+            }
+
+            info(`adding ${username} to new role "${openRole}" at ` +
+                `"${room.name}"`);
+
+            activeRoom.createRole(openRole);
+            role = {
+                ProjectName: openRole,
+                SourceCode: null,
+                SourceSize: 0
+            };
+            activeRoom.cachedProjects[openRole] = role;
+        }
+    } else {
+
+        if (activeRoom) {
+            trace(`found active room but times don't match! (${room.name})`);
+            activeRoom.changeName();
+            activeRoom = null;
+        }
+
+        // If room is not active, pick a role arbitrarily
+        openRole = Object.keys(room.roles)[0];
+        role = room.roles[openRole];
+
+        if (!role) {
+            error('Found room with no roles!');
+            return res.status(500).send('ERROR: project has no roles');
+        }
+        trace(`room is not active. Selected role "${openRole}" ` +
+            `arbitrarily`);
+    }
+    return role;
+};
+
 module.exports = [
     {
         Service: 'saveProject',
@@ -200,8 +265,6 @@ module.exports = [
             // For now, just return the project
             var room = user.rooms.find(room => room.name === roomName),
                 project,
-                activeRoom,
-                openRole,
                 role;
 
             if (!room) {
@@ -210,66 +273,10 @@ module.exports = [
             }
             trace(`found room ${roomName} for ${username}`);
 
-            activeRoom = this.rooms[Utils.uuid(room.owner, room.name)];
-
-            // Check if it is actually the same - do the originTime's match?
-            if (activeRoom && activeRoom.originTime === room.originTime) {
-                openRole = Object.keys(activeRoom.roles)
-                    .filter(role => !activeRoom.roles[role])  // not occupied
-                    .shift();
-
-                trace(`room "${roomName}" is already active`);
-                if (openRole && activeRoom.cachedProjects[openRole]) {  // Send an open role and add the user
-                    trace(`adding ${username} to open role "${openRole}" at ` +
-                        `"${roomName}"`);
-
-                    role = activeRoom.cachedProjects[openRole];
-                } else {  // If no open role w/ cache -> make a new role
-                    let i = 2,
-                        base;
-
-                    if (!openRole) {
-                        openRole = base = 'new role';
-                        while (activeRoom.hasOwnProperty(openRole)) {
-                            openRole = `${base} (${i++})`;
-                        }
-                        trace(`creating new role "${openRole}" ` +
-                            `at "${roomName}" for ${username}`);
-                    } else {
-                        // TODO: This is bad. User could be losing data!
-                        error(`Found open role "${openRole}" but it is not cached!`);
-                    }
-
-                    info(`adding ${username} to new role "${openRole}" at ` +
-                        `"${roomName}"`);
-
-                    activeRoom.createRole(openRole);
-                    role = {
-                        ProjectName: openRole,
-                        SourceCode: null,
-                        SourceSize: 0
-                    };
-                    activeRoom.cachedProjects[openRole] = role;
-                }
-            } else {
-
-                if (activeRoom) {
-                    trace(`found active room but times don't match! (${roomName})`);
-                    activeRoom.changeName();
-                    activeRoom = null;
-                }
-
-                // If room is not active, pick a role arbitrarily
-                openRole = Object.keys(room.roles)[0];
-                role = room.roles[openRole];
-
-                if (!role) {
-                    error('Found room with no roles!');
-                    return res.status(500).send('ERROR: project has no roles');
-                }
-                trace(`room is not active. Selected role "${openRole}" ` +
-                    `arbitrarily`);
-            }
+            // resolve the room with currently active rooms
+            role = retrieveRoleWrtActive(room, this.rooms);
+            trace(`adding ${username} to open role "${openRole}" at ` +
+                `"${room.name}"`);
 
             // Send the project to the user
             project = Utils.serializeProject(role);
@@ -339,7 +346,50 @@ module.exports = [
         }
     },
 
-    // Methods for forum client
+    // getPublicProjects
+    {
+        Method: 'get',
+        URL: 'RawPublic',
+        middleware: ['hasSocket'],
+        Handler: function(req, res) {
+            var username = req.query.Username,
+                name = req.query.ProjectName,
+                socketId = req.body.socketId;
+
+            // Get the given
+            middleware.loadUser(username, res, user => {
+                var room = user.rooms.find(r => r.name === name),
+                    project,
+                    role;
+
+                if (!room) {
+                    error(`could not find room ${name}`);
+                    return res.status(404).send('ERROR: could not find room');
+                }
+                trace(`publicly accessing room ${name} owned by ${username}`);
+
+                if (!room.Public) {
+                    warn(`could not open project ${name} - it is not public!`);
+                    return res.status(403).send(`ERROR: you do not have permission to view ${name}`);
+                }
+
+                // Clone the project and...
+                //   - set self as the new owner
+                //   - fix any potential name collisions
+                newRoom = _.cloneDeep(room);
+                // Need the socket!
+                // TODO
+                newRoom.owner = // New user name...
+                role = retrieveRoleWrtActive(room, this.rooms);
+
+                // Send the project to the user
+                project = Utils.serializeProject(role);
+                return res.send(project);
+            });
+        }
+    },
+
+    // Methods for other clients
     {
         Method: 'get',
         URL: 'projects/:owner',
