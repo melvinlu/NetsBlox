@@ -253,4 +253,336 @@ InputSlotDialogMorph.prototype.createSlotTypeButtons = function () {
     Morph.prototype.trackChanges = oldFlag;
 };
 
+// Override for exporting message types
 
+// BlockExportDialogMorph ////////////////////////////////////////////////////
+
+// BlockExportDialogMorph inherits from DialogBoxMorph:
+
+BlockExportDialogMorph.prototype = new DialogBoxMorph();
+BlockExportDialogMorph.prototype.constructor = BlockExportDialogMorph;
+BlockExportDialogMorph.uber = DialogBoxMorph.prototype;
+
+// BlockExportDialogMorph constants:
+
+BlockExportDialogMorph.prototype.key = 'blockExport';
+
+// BlockExportDialogMorph instance creation:
+
+function BlockExportDialogMorph(serializer, blocks, stage) {
+    this.init(serializer, blocks, stage);
+}
+
+BlockExportDialogMorph.prototype.init = function (serializer, blocks, stage) {
+    var myself = this;
+
+    // additional properties:
+    this.serializer = serializer;
+    this.blocks = blocks.slice(0);
+    this.handle = null;
+
+    // initialize inherited properties:
+    BlockExportDialogMorph.uber.init.call(
+        this,
+        null, // target
+        function () {myself.exportBlocks(stage); },
+        null // environment
+    );
+
+    // override inherited properites:
+    this.labelString = 'Export blocks / message types';
+    this.createLabel();
+
+    // build contents
+    this.buildContents(stage);
+};
+
+BlockExportDialogMorph.prototype.buildContents = function (stage) {
+    var palette, x, y, block, checkBox, lastCat,
+        myself = this,
+        padding = 4;
+    this.msgs = [];
+
+    // create plaette
+    palette = new ScrollFrameMorph(
+        null,
+        null,
+        SpriteMorph.prototype.sliderColor
+    );
+    palette.color = SpriteMorph.prototype.paletteColor;
+    palette.padding = padding;
+    palette.isDraggable = false;
+    palette.acceptsDrops = false;
+    palette.contents.acceptsDrops = false;
+
+    // populate palette
+    x = palette.left() + padding;
+    y = palette.top() + padding;
+    // custom blocks first...
+    SpriteMorph.prototype.categories.forEach(function (category) {
+        myself.blocks.forEach(function (definition) {
+            if (definition.category === category) {
+                if (lastCat && (category !== lastCat)) {
+                    y += padding;
+                }
+                lastCat = category;
+                block = definition.templateInstance();
+                checkBox = new ToggleMorph(
+                    'checkbox',
+                    myself,
+                    function () {
+                        var idx = myself.blocks.indexOf(definition);
+                        if (idx > -1) {
+                            myself.blocks.splice(idx, 1);
+                        } else {
+                            myself.blocks.push(definition);
+                        }
+                    },
+                    null,
+                    function () {
+                        return contains(
+                            myself.blocks,
+                            definition
+                        );
+                    },
+                    null,
+                    null,
+                    null,
+                    block.fullImage()
+                );
+                checkBox.setPosition(new Point(
+                    x,
+                    y + (checkBox.top() - checkBox.toggleElement.top())
+                ));
+                palette.addContents(checkBox);
+                y += checkBox.fullBounds().height() + padding;
+            }
+        });
+    });
+
+
+    // ...custom message types second
+    for (var i = 0; i < stage.deletableMessageNames().length; i++) {
+        // assume that the user wants to export ALL message types at first
+        var msg = new ReporterBlockMorph();
+        msg.setSpec(stage.deletableMessageNames()[i]);
+        msg.setColor(new Color(217,77,17));
+        this.msgs.push(msg);
+    }
+    
+    this.msgs.forEach(function (msg) {
+        checkBox = new ToggleMorph(
+            'checkbox',
+            this,
+            function() {
+               if (this.msgs.includes(msg)) {
+                    this.msgs.splice(this.msgs.indexOf(msg), 1);
+               } else {
+                    this.msgs.push(msg);
+               }
+            },
+            null,
+            function() {
+                return this.msgs.includes(msg);
+            },
+            null,
+            null,
+            null,
+            msg.fullImage()
+        );
+        checkBox.setPosition(new Point(
+            x,
+            y + (checkBox.top() - checkBox.toggleElement.top())
+            ));
+        palette.addContents(checkBox);
+        y += checkBox.fullBounds().height() + padding;
+    }.bind(this));
+
+    palette.scrollX(padding);
+    palette.scrollY(padding);
+    this.addBody(palette);
+
+    this.addButton('ok', 'OK');
+    this.addButton('cancel', 'Cancel');
+
+    this.setExtent(new Point(220, 300));
+    this.fixLayout();
+
+
+};
+
+BlockExportDialogMorph.prototype.popUp = function (wrrld) {
+    var world = wrrld || this.target.world();
+    if (world) {
+        BlockExportDialogMorph.uber.popUp.call(this, world);
+        this.handle = new HandleMorph(
+            this,
+            200,
+            220,
+            this.corner,
+            this.corner
+        );
+    }
+};
+
+// BlockExportDialogMorph menu
+
+BlockExportDialogMorph.prototype.userMenu = function () {
+    var menu = new MenuMorph(this, 'select');
+    menu.addItem('all', 'selectAll');
+    menu.addItem('none', 'selectNone');
+    return menu;
+};
+
+BlockExportDialogMorph.prototype.selectAll = function () {
+    this.body.contents.children.forEach(function (checkBox) {
+        if (!checkBox.state) {
+            checkBox.trigger();
+        }
+    });
+};
+
+BlockExportDialogMorph.prototype.selectNone = function () {
+    this.blocks = [];
+    this.msgs = [];
+    this.body.contents.children.forEach(function (checkBox) {
+        checkBox.refresh();
+    });
+};
+
+// BlockExportDialogMorph ops
+
+BlockExportDialogMorph.prototype.exportBlocks = function (stage) {
+    var str = this.serializer.serialize(this.blocks),
+        ide = this.world().children[0],
+        msgs = '';
+
+    // Use JSON to serialize message types
+    for (var i = 0; i < this.msgs.length; i++) {
+        msgs = msgs + '<block-definition s=\'' + JSON.stringify((stage.messageTypes.getMsgType(this.msgs[i].blockSpec))) + '\' category=\'msg\'/>' ;
+    }
+
+    if (this.blocks.length > 0 || this.msgs.length > 0) {
+        str = '<blocks app="'
+            + this.serializer.app
+            + '" version="'
+            + this.serializer.version
+            + '">'
+            + str
+            + msgs
+            + '</blocks>';
+        ide.saveXMLAs(
+            str,
+            ide.projectName || localize('Untitled') + ' ' + localize('blocks')
+        );
+    } else {
+        new DialogBoxMorph().inform(
+            'Export blocks / message types',
+            'no blocks or message types were selected',
+            this.world()
+        );
+    }
+};
+
+// BlockExportDialogMorph layout
+
+BlockExportDialogMorph.prototype.fixLayout
+    = BlockEditorMorph.prototype.fixLayout;
+
+// BlockImportDialogMorph ////////////////////////////////////////////////////
+
+// BlockImportDialogMorph inherits from DialogBoxMorph
+// and pseudo-inherits from BlockExportDialogMorph:
+
+BlockImportDialogMorph.prototype = new DialogBoxMorph();
+BlockImportDialogMorph.prototype.constructor = BlockImportDialogMorph;
+BlockImportDialogMorph.uber = DialogBoxMorph.prototype;
+
+// BlockImportDialogMorph constants:
+
+BlockImportDialogMorph.prototype.key = 'blockImport';
+
+// BlockImportDialogMorph instance creation:
+
+function BlockImportDialogMorph(blocks, target, name) {
+    this.init(blocks, target, name);
+}
+
+BlockImportDialogMorph.prototype.init = function (blocks, target, name) {
+    var myself = this;
+
+    // additional properties:
+    this.blocks = blocks.slice(0);
+    this.handle = null;
+
+    // initialize inherited properties:
+    BlockExportDialogMorph.uber.init.call(
+        this,
+        target,
+        function () {myself.importBlocks(name); },
+        null // environment
+    );
+
+    // override inherited properites:
+    this.labelString = localize('Import blocks / message types')
+        + (name ? ': ' : '')
+        + name || '';
+    this.createLabel();
+
+    // build contents
+    this.buildContents();
+};
+
+BlockImportDialogMorph.prototype.buildContents
+    = BlockExportDialogMorph.prototype.buildContents;
+
+BlockImportDialogMorph.prototype.popUp
+    = BlockExportDialogMorph.prototype.popUp;
+
+// BlockImportDialogMorph menu
+
+BlockImportDialogMorph.prototype.userMenu
+    = BlockExportDialogMorph.prototype.userMenu;
+
+BlockImportDialogMorph.prototype.selectAll
+    = BlockExportDialogMorph.prototype.selectAll;
+
+BlockImportDialogMorph.prototype.selectNone
+    = BlockExportDialogMorph.prototype.selectNone;
+
+// BlockImportDialogMorph ops
+
+BlockImportDialogMorph.prototype.importBlocks = function (name) {
+    var ide = this.target.parentThatIsA(IDE_Morph);
+    if (!ide) {return; }
+    if (this.blocks.length > 0 || this.msgs.length > 0) {
+        this.blocks.forEach(function (def) {
+            // Message type import
+            if (def.category === 'msg') {
+                ide.stage.addMessageType(JSON.parse(def.spec));
+            } else {  // Block import
+                def.receiver = myself.stage;
+                ide.stage.globalBlocks.push(def);
+                ide.stage.replaceDoubleDefinitionsFor(def);
+            }
+        });
+        ide.flushBlocksCache();
+        ide.flushPaletteCache();
+        ide.refreshPalette();
+        ide.showMessage(
+            'Imported Blocks / Message Types Module' + (name ? ': ' + name : '') + '.',
+            2
+        );
+    } else {
+        new DialogBoxMorph().inform(
+            'Import blocks / message types',
+            'no blocks or message types were selected',
+            this.world()
+        );
+    }
+};
+
+// BlockImportDialogMorph layout
+
+BlockImportDialogMorph.prototype.fixLayout
+    = BlockEditorMorph.prototype.fixLayout;
